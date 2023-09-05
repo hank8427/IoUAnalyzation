@@ -1,0 +1,43 @@
+﻿<Window x:Class="IoUAnalyzation.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:IoUAnalyzation"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800"
+        DataContext ="{Binding RelativeSource={RelativeSource Self}}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="100"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel VerticalAlignment ="Center">
+            <TextBox Text ="{Binding Threshold}" Width ="120" TextAlignment="Center" Margin="5"/>
+            <Button Content="Calculate IoU" Height="20" Width="120" Click="Calculate_OnClick" Margin="5"/>
+        </StackPanel>
+        
+        <ListView Grid.Column="1"  ItemsSource ="{Binding Results}" Margin="5">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Width="50" Header="Score" DisplayMemberBinding="{Binding Score}"/>
+                    <GridViewColumn Width="50" Header="IoU" DisplayMemberBinding="{Binding IoU}"/>
+                    <GridViewColumn Width="100" Header="Result" DisplayMemberBinding="{Binding Result}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <WrapPanel Grid.Row="1" Grid.Column="1" Margin="5">
+            <TextBlock Text="Wrong: "/>
+            <TextBlock Text="{Binding WrongCount}" Width="50"/>
+            <TextBlock Text="Total: "/>
+            <TextBlock Text="{Binding TotalCount}" Width="50"/>
+        </WrapPanel>
+    </Grid>
+</Window>
