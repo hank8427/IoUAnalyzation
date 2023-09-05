@@ -36,6 +36,8 @@
         <WrapPanel Grid.Row="1" Grid.Column="1" Margin="5">
             <TextBlock Text="Wrong: "/>
             <TextBlock Text="{Binding WrongCount}" Width="50"/>
+            <TextBlock Text="Missing: "/>
+            <TextBlock Text="{Binding MissingCount}" Width="50"/>
             <TextBlock Text="Total: "/>
             <TextBlock Text="{Binding TotalCount}" Width="50"/>
         </WrapPanel>
