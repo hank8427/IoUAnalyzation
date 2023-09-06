@@ -44,6 +44,40 @@ namespace IoUAnalyzation
         public int WrongCount { get; set; }
         public int MissingCount { get; set; }
         public int TotalCount { get; set; }
+        public bool HideNg{ get; set; }
+        public bool HideOk{ get; set; }
+        private void OnHideNgChanged()
+        {
+            if (HideNg)
+            {
+                if(Results != null && Results.Count > 0)
+                {
+                    IoUCalculation();
+                    var result = Results.Where(x => x.WrongCount == 0 && x.MissingCount == 0);
+                    Results = new ObservableCollection<DisplayResult>(result);
+                }
+            }
+            else
+            {
+                IoUCalculation();
+            }
+        }
+        private void OnHideOkChanged()
+        {
+            if (HideOk)
+            {
+                if (Results != null && Results.Count > 0)
+                {
+                    IoUCalculation(); 
+                    var result = Results.Where(x => x.WrongCount > 0 || x.MissingCount > 0);
+                    Results = new ObservableCollection<DisplayResult>(result);
+                }
+            }
+            else
+            {
+                IoUCalculation();
+            }
+        }
         public ObservableCollection<DisplayResult> Results {  get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -137,8 +171,10 @@ namespace IoUAnalyzation
                         MissingCount = myMissingCount,
                         TotalCount = rectangles.Count
                     });
-                }
-            ;
+                };
+
+                WrongCount = Results.Where(x=>x.WrongCount > 0).Count();
+                MissingCount = Results.Where(x=>x.MissingCount > 0).Count();
             }
             catch (Exception ex)
             {

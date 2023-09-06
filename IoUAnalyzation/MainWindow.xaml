@@ -42,6 +42,24 @@
                 </GridView>
             </ListView.View>
         </ListView>
+        <UniformGrid Columns="4" Grid.Column="1" Grid.Row="1">
+            <WrapPanel>
+                <TextBlock Text="誤抓張數:" Margin="0,0,5,0"/>
+                <TextBlock Text="{Binding WrongCount}"/>
+            </WrapPanel>
+            <WrapPanel>
+                <TextBlock Text="漏抓張數:" Margin="0,0,5,0"/>
+                <TextBlock Text="{Binding MissingCount}"/>
+            </WrapPanel>
+            <WrapPanel>
+                <TextBlock Text="隱藏NG" Margin="0,0,5,0"/>
+                <CheckBox IsChecked="{Binding HideNg}"/>
+            </WrapPanel>
+            <WrapPanel>
+                <TextBlock Text="隱藏OK" Margin="0,0,5,0"/>
+                <CheckBox IsChecked="{Binding HideOk}"/>
+            </WrapPanel>
+        </UniformGrid>
 
         <!--<WrapPanel Grid.Row="1" Grid.Column="1" Margin="5">
             <TextBlock Text="Wrong: "/>
