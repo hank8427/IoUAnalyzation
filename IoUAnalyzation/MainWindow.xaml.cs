@@ -40,7 +40,9 @@ namespace IoUAnalyzation
         private int myMissingCount { get; set; }
         private int myWrongCount { get; set; }
         public string ToolPath{ get; set; }
+        public string ClassName { get; set; } = "NG";
         public double Threshold { get; set; } = 0.005;
+        public double ScoreThreshold { get; set; } = 0.5;
         public int WrongCount { get; set; }
         public int MissingCount { get; set; }
         public int TotalCount { get; set; }
@@ -116,7 +118,11 @@ namespace IoUAnalyzation
                     foreach (var annotation in annotations)
                     {
                         var intersectObject = 0;
-                        var annotationArea = CvInvoke.ContourArea(new VectorOfPointF(annotation.ToArray()));
+                        double annotationArea = 0;
+                        if (annotation.Count != 0)
+                        {
+                            annotationArea = CvInvoke.ContourArea(new VectorOfPointF(annotation.ToArray()));
+                        }
                         //var annotationRect = GetAnnotationRect(points);
                         //var annotationArea = annotationRect.Width * annotationRect.Height;
 
@@ -213,21 +219,26 @@ namespace IoUAnalyzation
                     var points = new List<PointF>();
                     foreach(var classifyObject in expandoObject.Objects)
                     {
-                        foreach (var layer in classifyObject.Layers)
+                        var classObject = (IDictionary<string, object>)classifyObject.Class;
+                        var className = classObject["$ref"].ToString().Trim('#');
+                        if (className == ClassName)
                         {
-                            if (((IDictionary<string, object>)layer.Shape).ContainsKey("Points"))
-                            {                               
-                                foreach (var point in layer.Shape.Points)
+                            foreach (var layer in classifyObject.Layers)
+                            {
+                                if (((IDictionary<string, object>)layer.Shape).ContainsKey("Points"))
                                 {
-                                    //Console.WriteLine(float.Parse(point.Split(',')[0]));
-                                    points.Add(new PointF()
+                                    foreach (var point in layer.Shape.Points)
                                     {
-                                        X = float.Parse(point.Split(',')[0]),
-                                        Y = float.Parse(point.Split(',')[1])
-                                    }); ;
+                                        //Console.WriteLine(float.Parse(point.Split(',')[0]));
+                                        points.Add(new PointF()
+                                        {
+                                            X = float.Parse(point.Split(',')[0]),
+                                            Y = float.Parse(point.Split(',')[1])
+                                        }); ;
+                                    }
                                 }
-                            }
-                        };
+                            };
+                        }
                     }
 
                     annotations.Add(points);
@@ -249,17 +260,24 @@ namespace IoUAnalyzation
                 var vertices = new System.Drawing.Point[4];
                 for (int i = 0; i < rectangle.annotations.Count; i++)
                 {
-                    rectangleResults.Add(new DetectionResult(){
-                        Score = Math.Round(rectangle.annotations[i].score, 2),
-                        
-                        Rectangle = new Rectangle()
+                    var score = Math.Round(rectangle.annotations[i].score, 2);
+                    var classId = (int)rectangle.annotations[i].category_id;
+                    var className = rectangle.categories[classId-1].name.ToString();
+                    if (score > ScoreThreshold && className == ClassName)
+                    {
+                        rectangleResults.Add(new DetectionResult()
                         {
-                            X = (int)rectangle.annotations[i].bbox[0],
-                            Y = (int)rectangle.annotations[i].bbox[1],
-                            Width = (int)(rectangle.annotations[i].bbox[2] - rectangle.annotations[i].bbox[0]),
-                            Height = (int)(rectangle.annotations[i].bbox[3] - rectangle.annotations[i].bbox[1]),
-                        }
-                    });
+                            Score = score,
+
+                            Rectangle = new Rectangle()
+                            {
+                                X = (int)rectangle.annotations[i].bbox[0],
+                                Y = (int)rectangle.annotations[i].bbox[1],
+                                Width = (int)(rectangle.annotations[i].bbox[2] - rectangle.annotations[i].bbox[0]),
+                                Height = (int)(rectangle.annotations[i].bbox[3] - rectangle.annotations[i].bbox[1]),
+                            }
+                        });
+                    }
                 }
                 return rectangleResults;
             }          

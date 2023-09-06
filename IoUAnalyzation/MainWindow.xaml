@@ -23,9 +23,14 @@
                 <TextBlock Text="SolVision Tool: "/>
                 <TextBox Text ="{Binding ToolPath}" Width ="180" TextAlignment="Center" Margin="5"/>
                 <Button Content="Select Tool" Height="20" Width="120" Click="SelectTool_OnClick" Margin="5"/>
+                
             </StackPanel>
 
             <StackPanel DockPanel.Dock="Bottom" Margin="5,100,5,0">
+                <TextBlock Text="Class Name: "/>
+                <TextBox Text ="{Binding ClassName}" Width ="120" TextAlignment="Center" Margin="5"/>
+                <TextBlock Text="Score Threshold: "/>
+                <TextBox Text ="{Binding ScoreThreshold}" Width ="120" TextAlignment="Center" Margin="5"/>
                 <TextBlock Text="IoU Threshold: "/>
                 <TextBox Text ="{Binding Threshold}" Width ="120" TextAlignment="Center" Margin="5"/>
                 <Button Content="Calculate IoU" Height="20" Width="120" Click="Calculate_OnClick" Margin="5"/>
