@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:IoUAnalyzation"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
+        Title="MainWindow" Height="600" Width="1000"
         DataContext ="{Binding RelativeSource={RelativeSource Self}}">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -17,11 +17,20 @@
             <RowDefinition Height="1*"/>
             <RowDefinition Height="100"/>
         </Grid.RowDefinitions>
+        
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Margin="5">
+                <TextBlock Text="SolVision Tool: "/>
+                <TextBox Text ="{Binding ToolPath}" Width ="180" TextAlignment="Center" Margin="5"/>
+                <Button Content="Select Tool" Height="20" Width="120" Click="SelectTool_OnClick" Margin="5"/>
+            </StackPanel>
 
-        <StackPanel VerticalAlignment ="Center">
-            <TextBox Text ="{Binding Threshold}" Width ="120" TextAlignment="Center" Margin="5"/>
-            <Button Content="Calculate IoU" Height="20" Width="120" Click="Calculate_OnClick" Margin="5"/>
-        </StackPanel>
+            <StackPanel DockPanel.Dock="Bottom" Margin="5,100,5,0">
+                <TextBlock Text="IoU Threshold: "/>
+                <TextBox Text ="{Binding Threshold}" Width ="120" TextAlignment="Center" Margin="5"/>
+                <Button Content="Calculate IoU" Height="20" Width="120" Click="Calculate_OnClick" Margin="5"/>
+            </StackPanel>
+        </DockPanel>
         
         <ListView Grid.Column="1"  ItemsSource ="{Binding Results}" Margin="5">
             <ListView.View>

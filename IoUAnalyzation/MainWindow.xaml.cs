@@ -22,6 +22,12 @@ using Rectangle = System.Drawing.Rectangle;
 using Emgu.CV.Util;
 using System.Drawing;
 using System.ComponentModel;
+using Microsoft.Win32;
+using System.Windows.Forms;
+using Newtonsoft.Json.Linq;
+using System.Collections;
+using System.Windows.Markup;
+using System.Collections.ObjectModel;
 
 namespace IoUAnalyzation
 {
@@ -30,12 +36,12 @@ namespace IoUAnalyzation
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        private int myMissingPixelThreshold = 100;
+        public string ToolPath{ get; set; }
         public double Threshold { get; set; } = 0.005;
         public int WrongCount { get; set; }
         public int MissingCount { get; set; }
         public int TotalCount { get; set; }
-        public List<DetectionResult> Results {  get; set; }
+        public ObservableCollection<DetectionResult> Results {  get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
         public MainWindow()
@@ -45,17 +51,23 @@ namespace IoUAnalyzation
 
         public void IoUCalculation()
         {
-            Results = new List<DetectionResult>();
-            var toolPath = "C:\\Users\\User\\Desktop\\IoU\\DuckEgg_20230901_9_MarkTogether_Rotation\\Instance Segmentation4 Tool1";
+            MissingCount = 0;
+            Results = new ObservableCollection<DetectionResult>();
+            //ToolPath = "C:\\Users\\User\\Desktop\\IoU\\DuckEgg_20230901_9_MarkTogether_Rotation\\Instance Segmentation4 Tool1";
 
-            var detectionFilePath = toolPath + "\\DetectImages\\Validation\\Detection\\";
+            if (ToolPath == null)
+            {
+                return;
+            }
+
+            var detectionFilePath = ToolPath + "\\DetectImages\\Validation\\Detection\\";
             var detections = Directory.GetFiles(detectionFilePath, "*.json").ToList();
 
-            var annotateFilePath = toolPath + "\\DetectImages\\SegmentImgs\\";
-            var annotationFiles = Directory.GetFiles(annotateFilePath, "*.txt").Where(x => !x.Contains("keypoints")).ToList();
+            var annotateFilePath = ToolPath + "\\DetectImages\\";
+            var annotationFiles = Directory.GetFiles(annotateFilePath, "*.json").ToList();
 
 
-            for (int i=0; i< 13; i++)
+            for (int i=0; i< detections.Count; i++)
             {
                 var rectangles = GetDetectionRect(detections[i]);
 
@@ -143,20 +155,33 @@ namespace IoUAnalyzation
             var annotations = new List<List<PointF>>();
             foreach (var filePath in filePaths)
             {
-                var lines = File.ReadLines(filePath);
-                var points = new List<PointF>();
-                foreach (var line in lines)
+                using (var sr = new StreamReader(filePath))
                 {
-                    if (line != "#start" && line != "#end")
+                    var json = sr.ReadToEnd();
+                    dynamic expandoObject = JsonConvert.DeserializeObject<ExpandoObject>(json);
+                    
+                    var points = new List<PointF>();
+                    foreach(var classifyObject in expandoObject.Objects)
                     {
-                        PointF point = new PointF();
-                        point.X = float.Parse(line.Split(',')[0]);
-                        point.Y = float.Parse(line.Split(',')[1]);
-
-                        points.Add(point);
+                        foreach (var layer in classifyObject.Layers)
+                        {
+                            if (((IDictionary<string, object>)layer.Shape).ContainsKey("Points"))
+                            {                               
+                                foreach (var point in layer.Shape.Points)
+                                {
+                                    //Console.WriteLine(float.Parse(point.Split(',')[0]));
+                                    points.Add(new PointF()
+                                    {
+                                        X = float.Parse(point.Split(',')[0]),
+                                        Y = float.Parse(point.Split(',')[1])
+                                    }); ;
+                                }
+                            }
+                        };
                     }
-                };
-                annotations.Add(points);
+
+                    annotations.Add(points);
+                }
             }    
             return annotations;
         }
@@ -205,6 +230,15 @@ namespace IoUAnalyzation
         private void Calculate_OnClick(object sender, RoutedEventArgs e)
         {
             IoUCalculation();
+        }
+
+        private void SelectTool_OnClick(object sender, RoutedEventArgs e)
+        {
+            var browser =  new FolderBrowserDialog();
+            if (browser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                ToolPath = browser.SelectedPath;
+            }            
         }
     }
 }
