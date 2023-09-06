@@ -119,7 +119,7 @@ namespace IoUAnalyzation
                     {
                         var intersectObject = 0;
                         double annotationArea = 0;
-                        if (annotation.Count != 0)
+                        if (annotation.Count > 0)
                         {
                             annotationArea = CvInvoke.ContourArea(new VectorOfPointF(annotation.ToArray()));
                         }
@@ -164,9 +164,12 @@ namespace IoUAnalyzation
                             }
                         }
 
-                        if (intersectObject == 0)
+                        if (annotation.Count > 0)
                         {
-                            myMissingCount += 1;
+                            if (intersectObject == 0)
+                            {
+                                myMissingCount += 1;
+                            }
                         }
                     }
 
