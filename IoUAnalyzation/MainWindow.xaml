@@ -35,20 +35,21 @@
         <ListView Grid.Column="1"  ItemsSource ="{Binding Results}" Margin="5">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Width="50" Header="Score" DisplayMemberBinding="{Binding Score}"/>
-                    <GridViewColumn Width="50" Header="IoU" DisplayMemberBinding="{Binding IoU}"/>
-                    <GridViewColumn Width="100" Header="Result" DisplayMemberBinding="{Binding Result}"/>
+                    <GridViewColumn Width="150" Header="Name" DisplayMemberBinding="{Binding ImageName}"/>
+                    <GridViewColumn Width="100" Header="WrongCount" DisplayMemberBinding="{Binding WrongCount}" />
+                    <GridViewColumn Width="100" Header="MissingCount" DisplayMemberBinding="{Binding MissingCount}"/>
+                    <GridViewColumn Width="100" Header="TotalCount" DisplayMemberBinding="{Binding TotalCount}"/>
                 </GridView>
             </ListView.View>
         </ListView>
 
-        <WrapPanel Grid.Row="1" Grid.Column="1" Margin="5">
+        <!--<WrapPanel Grid.Row="1" Grid.Column="1" Margin="5">
             <TextBlock Text="Wrong: "/>
             <TextBlock Text="{Binding WrongCount}" Width="50"/>
             <TextBlock Text="Missing: "/>
             <TextBlock Text="{Binding MissingCount}" Width="50"/>
             <TextBlock Text="Total: "/>
             <TextBlock Text="{Binding TotalCount}" Width="50"/>
-        </WrapPanel>
+        </WrapPanel>-->
     </Grid>
 </Window>
