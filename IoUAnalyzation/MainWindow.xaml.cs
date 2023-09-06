@@ -36,12 +36,14 @@ namespace IoUAnalyzation
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        private int myMissingCount { get; set; }
+        private int myWrongCount { get; set; }
         public string ToolPath{ get; set; }
         public double Threshold { get; set; } = 0.005;
         public int WrongCount { get; set; }
         public int MissingCount { get; set; }
         public int TotalCount { get; set; }
-        public ObservableCollection<DetectionResult> Results {  get; set; }
+        public ObservableCollection<DisplayResult> Results {  get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
         public MainWindow()
@@ -51,8 +53,7 @@ namespace IoUAnalyzation
 
         public void IoUCalculation()
         {
-            MissingCount = 0;
-            Results = new ObservableCollection<DetectionResult>();
+            Results = new ObservableCollection<DisplayResult>();
             //ToolPath = "C:\\Users\\User\\Desktop\\IoU\\DuckEgg_20230901_9_MarkTogether_Rotation\\Instance Segmentation4 Tool1";
 
             if (ToolPath == null)
@@ -69,8 +70,9 @@ namespace IoUAnalyzation
 
             for (int i=0; i< detections.Count; i++)
             {
+                myWrongCount = 0;
+                myMissingCount = 0;
                 var rectangles = GetDetectionRect(detections[i]);
-
 
                 var annotationFile = annotationFiles.Where(x => x.Contains(detections[i].Split('\\').LastOrDefault().Split('.')[0])).ToList();
 
@@ -109,31 +111,35 @@ namespace IoUAnalyzation
                         var detectionArea = rect.Rectangle.Width * rect.Rectangle.Height;
 
                         var union = annotationArea + detectionArea - intersectionArea;
-                        Results.Add(new DetectionResult()
-                        {
-                            Score = rect.Score,
-                            IoU = intersectionArea / union,
-                            Result = (intersectionArea / union) > Threshold ? "Real Target" : " "
-                        });
 
                         if ((intersectionArea / union) > Threshold)
                         {
                             intersectObject += 1;
                         }
+                        else if ((intersectionArea / union) < Threshold)
+                        {
+                            myWrongCount += 1;
+                        }
                     }
 
                     if (intersectObject == 0)
                     {
-                        MissingCount += 1;
+                        myMissingCount += 1;
                     }
-                }               
-            }
-            
-            WrongCount = Results.Where(x=>x.IoU < Threshold).Count();
-            TotalCount = Results.Count;
+                }
+
+                Results.Add(new DisplayResult()
+                {
+                    ImageName = System.IO.Path.GetFileNameWithoutExtension(annotationFile[0]),
+                    WrongCount = myWrongCount,
+                    MissingCount = myMissingCount,
+                    TotalCount = rectangles.Count
+                });
+            }           
+            ;
         }
 
-        private List<PointF> GetRectPoints(RectangleResult rect)
+        private List<PointF> GetRectPoints(DetectionResult rect)
         {
             var rectPoints = new List<PointF>();
             for (int x = rect.Rectangle.Left; x <= rect.Rectangle.Right; x++)
@@ -187,19 +193,19 @@ namespace IoUAnalyzation
         }
 
 
-        private List<RectangleResult> GetDetectionRect(string filePath)
+        private List<DetectionResult> GetDetectionRect(string filePath)
         {
            
             using (var sr = new StreamReader(filePath))
             {
                 var json = sr.ReadToEnd();
                 dynamic rectangle = JsonConvert.DeserializeObject<ExpandoObject>(json);
-                var rectangleResults = new List<RectangleResult>();
+                var rectangleResults = new List<DetectionResult>();
 
                 var vertices = new System.Drawing.Point[4];
                 for (int i = 0; i < rectangle.annotations.Count; i++)
                 {
-                    rectangleResults.Add(new RectangleResult(){
+                    rectangleResults.Add(new DetectionResult(){
                         Score = Math.Round(rectangle.annotations[i].score, 2),
                         
                         Rectangle = new Rectangle()
