@@ -300,6 +300,7 @@ namespace IoUAnalyzation
 
         private void Calculate_OnClick(object sender, RoutedEventArgs e)
         {
+            Reset();
             IoUCalculation();
         }
 
@@ -310,6 +311,11 @@ namespace IoUAnalyzation
             {
                 ToolPath = browser.FileName;
             }            
+        }
+        private void Reset()
+        {
+            HideNg = false;
+            HideOk = false;
         }
     }
 }
