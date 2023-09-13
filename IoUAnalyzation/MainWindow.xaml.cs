@@ -106,13 +106,13 @@ namespace IoUAnalyzation
                 var annotationFiles = Directory.GetFiles(annotateFilePath, "*.json").ToList();
 
 
-                for (int i = 0; i < detections.Count; i++)
+                for (int i = 114; i < detections.Count; i++)
                 {
                     myWrongCount = 0;
                     myMissingCount = 0;
                     var rectangles = GetDetectionRect(detections[i]);
 
-                    var annotationFile = annotationFiles.Where(x => x.Contains(detections[i].Split('\\').LastOrDefault().Split('.')[0])).ToList();
+                    var annotationFile = annotationFiles.Where(x => x.Contains(detections[i].Split('\\').LastOrDefault().Split('.')[0])).FirstOrDefault();
 
                     var annotations = GetAnnotationPoints(annotationFile);
                     foreach (var annotation in annotations)
@@ -175,7 +175,7 @@ namespace IoUAnalyzation
 
                     Results.Add(new DisplayResult()
                     {
-                        ImageName = System.IO.Path.GetFileNameWithoutExtension(annotationFile[0]),
+                        ImageName = System.IO.Path.GetFileNameWithoutExtension(annotationFile),
                         WrongCount = myWrongCount,
                         MissingCount = myMissingCount,
                         TotalCount = rectangles.Count
@@ -208,44 +208,43 @@ namespace IoUAnalyzation
             return rectPoints;
         }
 
-        private List<List<PointF>> GetAnnotationPoints(List<string> filePaths)
+        private List<List<PointF>> GetAnnotationPoints(string filePath)
         {
 
             var annotations = new List<List<PointF>>();
-            foreach (var filePath in filePaths)
-            {
-                using (var sr = new StreamReader(filePath))
-                {
-                    var json = sr.ReadToEnd();
-                    dynamic expandoObject = JsonConvert.DeserializeObject<ExpandoObject>(json);
-                    
-                    var points = new List<PointF>();
-                    foreach(var classifyObject in expandoObject.Objects)
-                    {
-                        var classObject = (IDictionary<string, object>)classifyObject.Class;
-                        var className = classObject["$ref"].ToString().Trim('#');
-                        if (className == ClassName)
-                        {
-                            foreach (var layer in classifyObject.Layers)
-                            {
-                                if (((IDictionary<string, object>)layer.Shape).ContainsKey("Points"))
-                                {
-                                    foreach (var point in layer.Shape.Points)
-                                    {
-                                        //Console.WriteLine(float.Parse(point.Split(',')[0]));
-                                        points.Add(new PointF()
-                                        {
-                                            X = float.Parse(point.Split(',')[0]),
-                                            Y = float.Parse(point.Split(',')[1])
-                                        }); ;
-                                    }
-                                }
-                            };
-                        }
-                    }
 
-                    annotations.Add(points);
+            using (var sr = new StreamReader(filePath))
+            {
+                var json = sr.ReadToEnd();
+                dynamic expandoObject = JsonConvert.DeserializeObject<ExpandoObject>(json);
+                    
+                
+                foreach(var classifyObject in expandoObject.Objects)
+                {
+                    var classObject = (IDictionary<string, object>)classifyObject.Class;
+                    var className = classObject["$ref"].ToString().Trim('#');
+                    if (className == ClassName)
+                    {
+                        var points = new List<PointF>();
+                        foreach (var layer in classifyObject.Layers)
+                        {
+                            if (((IDictionary<string, object>)layer.Shape).ContainsKey("Points"))
+                            {                              
+                                foreach (var point in layer.Shape.Points)
+                                {
+                                    //Console.WriteLine(float.Parse(point.Split(',')[0]));
+                                    points.Add(new PointF()
+                                    {
+                                        X = float.Parse(point.Split(',')[0]),
+                                        Y = float.Parse(point.Split(',')[1])
+                                    }); ;
+                                }
+                            }
+                        };
+                        annotations.Add(points);
+                    }                   
                 }
+                
             }    
             return annotations;
         }
