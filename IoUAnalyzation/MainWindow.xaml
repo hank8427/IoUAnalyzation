@@ -64,6 +64,14 @@
                 <TextBlock Text="隱藏OK" Margin="0,0,5,0"/>
                 <CheckBox IsChecked="{Binding HideOk}"/>
             </WrapPanel>
+            <WrapPanel>
+                <TextBlock Text="隱藏Wrong" Margin="0,0,5,0"/>
+                <CheckBox IsChecked="{Binding HideWrong}"/>
+            </WrapPanel>
+            <WrapPanel>
+                <TextBlock Text="隱藏Missing" Margin="0,0,5,0"/>
+                <CheckBox IsChecked="{Binding HideMissing}"/>
+            </WrapPanel>
         </UniformGrid>
 
         <!--<WrapPanel Grid.Row="1" Grid.Column="1" Margin="5">
