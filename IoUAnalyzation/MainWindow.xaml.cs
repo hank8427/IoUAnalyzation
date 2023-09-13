@@ -29,6 +29,7 @@ using System.Collections;
 using System.Windows.Markup;
 using System.Collections.ObjectModel;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Windows.Annotations;
 
 namespace IoUAnalyzation
 {
@@ -115,24 +116,26 @@ namespace IoUAnalyzation
                     var annotationFile = annotationFiles.Where(x => x.Contains(detections[i].Split('\\').LastOrDefault().Split('.')[0])).FirstOrDefault();
 
                     var annotations = GetAnnotationPoints(annotationFile);
-                    foreach (var annotation in annotations)
+
+                    for (int rect=0; rect < rectangles.Count; rect++)
                     {
+                        double intersectionArea = 0;
+                        var intersection = new VectorOfPointF();
+                        var rectPoints = GetRectPoints(rectangles[rect]);
                         var intersectObject = 0;
-                        double annotationArea = 0;
-                        if (annotation.Count > 0)
-                        {
-                            annotationArea = CvInvoke.ContourArea(new VectorOfPointF(annotation.ToArray()));
-                        }
-                        //var annotationRect = GetAnnotationRect(points);
-                        //var annotationArea = annotationRect.Width * annotationRect.Height;
 
-                        foreach (var rect in rectangles)
+                        foreach (var annotation in annotations)
                         {
-                            double intersectionArea = 0;
-                            var intersection = new VectorOfPointF();
-                            var rectPoints = GetRectPoints(rect);
+                            double annotationArea = 0;
+                            if (annotation.Count > 0)
+                            {
+                                annotationArea = CvInvoke.ContourArea(new VectorOfPointF(annotation.ToArray()));
+                            }
 
-                            //CvInvoke.IntersectConvexConvex(new VectorOfPointF(points.ToArray()), new VectorOfPointF(rectPoints.ToArray()), intersection);
+                            //var annotationRect = GetAnnotationRect(annotation);
+                            //var annotationArea = annotationRect.Width * annotationRect.Height;
+
+                            ////CvInvoke.IntersectConvexConvex(new VectorOfPointF(annotation.ToArray()), new VectorOfPointF(rectPoints.ToArray()), intersection);
                             //if (intersection.Length != 0)
                             //{
                             //    intersectionArea = CvInvoke.ContourArea(intersection);
@@ -140,8 +143,8 @@ namespace IoUAnalyzation
 
                             foreach (var point in annotation)
                             {
-                                if (point.X >= rect.Rectangle.Left && point.X <= rect.Rectangle.Right &&
-                                    point.Y >= rect.Rectangle.Top && point.Y <= rect.Rectangle.Bottom)
+                                if (point.X >= rectangles[rect].Rectangle.Left && point.X <= rectangles[rect].Rectangle.Right &&
+                                    point.Y >= rectangles[rect].Rectangle.Top && point.Y <= rectangles[rect].Rectangle.Bottom)
                                 {
                                     intersectionArea += 1;
                                 }
@@ -150,7 +153,7 @@ namespace IoUAnalyzation
                             //var intersectionRect = Rectangle.Intersect(rect.Rectangle, annotationRect);
                             //intersectionArea = intersectionRect.Width * intersectionRect.Height;
 
-                            var detectionArea = rect.Rectangle.Width * rect.Rectangle.Height;
+                            var detectionArea = rectangles[rect].Rectangle.Width * rectangles[rect].Rectangle.Height;
 
                             var union = annotationArea + detectionArea - intersectionArea;
 
@@ -162,15 +165,16 @@ namespace IoUAnalyzation
                             {
                                 myWrongCount += 1;
                             }
-                        }
 
-                        if (annotation.Count > 0)
-                        {
-                            if (intersectObject == 0)
+                            if (annotation.Count > 0)
                             {
-                                myMissingCount += 1;
+                                if (intersectObject == 0)
+                                {
+                                    myMissingCount += 1;
+                                }
                             }
                         }
+
                     }
 
                     Results.Add(new DisplayResult()
