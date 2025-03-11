@@ -29,6 +29,7 @@ using System.Collections;
 using System.Windows.Markup;
 using System.Collections.ObjectModel;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Windows.Annotations;
 
 namespace IoUAnalyzation
 {
@@ -100,11 +101,11 @@ namespace IoUAnalyzation
 
             try
             {
-                var detectionFilePath = ToolPath + "\\DetectImages\\Validation\\Detection\\";
+                //var detectionFilePath = ToolPath + "\\DetectImages\\Validation\\Detection\\";
+                var detectionFilePath = ToolPath + "\\Images\\Validation\\ValidationGroup\\Detection\\";
                 var detections = Directory.GetFiles(detectionFilePath, "*.json").ToList();
-                var annotateFilePath = ToolPath + "\\DetectImages\\";
+                var annotateFilePath = ToolPath + "\\Images\\";
                 var annotationFiles = Directory.GetFiles(annotateFilePath, "*.json").ToList();
-
 
                 for (int i = 0; i < detections.Count; i++)
                 {
@@ -112,70 +113,16 @@ namespace IoUAnalyzation
                     myMissingCount = 0;
                     var rectangles = GetDetectionRect(detections[i]);
 
-                    var annotationFile = annotationFiles.Where(x => x.Contains(detections[i].Split('\\').LastOrDefault().Split('.')[0])).ToList();
+                    var annotationFile = annotationFiles.Where(x => x.Contains(detections[i].Split('\\').LastOrDefault().Split('.')[0])).FirstOrDefault();
 
                     var annotations = GetAnnotationPoints(annotationFile);
-                    foreach (var annotation in annotations)
-                    {
-                        var intersectObject = 0;
-                        double annotationArea = 0;
-                        if (annotation.Count > 0)
-                        {
-                            annotationArea = CvInvoke.ContourArea(new VectorOfPointF(annotation.ToArray()));
-                        }
-                        //var annotationRect = GetAnnotationRect(points);
-                        //var annotationArea = annotationRect.Width * annotationRect.Height;
 
-                        foreach (var rect in rectangles)
-                        {
-                            double intersectionArea = 0;
-                            var intersection = new VectorOfPointF();
-                            var rectPoints = GetRectPoints(rect);
-
-                            //CvInvoke.IntersectConvexConvex(new VectorOfPointF(points.ToArray()), new VectorOfPointF(rectPoints.ToArray()), intersection);
-                            //if (intersection.Length != 0)
-                            //{
-                            //    intersectionArea = CvInvoke.ContourArea(intersection);
-                            //}
-
-                            foreach (var point in annotation)
-                            {
-                                if (point.X >= rect.Rectangle.Left && point.X <= rect.Rectangle.Right &&
-                                    point.Y >= rect.Rectangle.Top && point.Y <= rect.Rectangle.Bottom)
-                                {
-                                    intersectionArea += 1;
-                                }
-                            }
-
-                            //var intersectionRect = Rectangle.Intersect(rect.Rectangle, annotationRect);
-                            //intersectionArea = intersectionRect.Width * intersectionRect.Height;
-
-                            var detectionArea = rect.Rectangle.Width * rect.Rectangle.Height;
-
-                            var union = annotationArea + detectionArea - intersectionArea;
-
-                            if ((intersectionArea / union) > Threshold)
-                            {
-                                intersectObject += 1;
-                            }
-                            else if ((intersectionArea / union) < Threshold)
-                            {
-                                myWrongCount += 1;
-                            }
-                        }
-
-                        if (annotation.Count > 0)
-                        {
-                            if (intersectObject == 0)
-                            {
-                                myMissingCount += 1;
-                            }
-                        }
-                    }
+                    CountingOfWrong(rectangles, annotations);
+                    CountingOfMiss(rectangles, annotations);
 
                     Results.Add(new DisplayResult()
                     {
-                        ImageName = System.IO.Path.GetFileNameWithoutExtension(annotationFile[0]),
+                        ImageName = System.IO.Path.GetFileNameWithoutExtension(annotationFile),
                         WrongCount = myWrongCount,
                         MissingCount = myMissingCount,
                         TotalCount = rectangles.Count
@@ -190,6 +137,118 @@ namespace IoUAnalyzation
                 System.Windows.Forms.MessageBox.Show(ex.ToString());
             }
           
+        }
+
+        private void CountingOfWrong(List<DetectionResult> rectangles, List<List<PointF>> annotations)
+        {
+            for (int rect = 0; rect < rectangles.Count; rect++)
+            {
+                double intersectionArea = 0;
+                var intersection = new VectorOfPointF();
+                var rectPoints = GetRectPoints(rectangles[rect]);
+                var intersectObject = 0;
+
+                foreach (var annotation in annotations)
+                {
+                    double annotationArea = 0;
+                    if (annotation.Count > 0)
+                    {
+                        annotationArea = CvInvoke.ContourArea(new VectorOfPointF(annotation.ToArray()));
+                    }
+
+                    //var annotationRect = GetAnnotationRect(annotation);
+                    //var annotationArea = annotationRect.Width * annotationRect.Height;
+
+                    ////CvInvoke.IntersectConvexConvex(new VectorOfPointF(annotation.ToArray()), new VectorOfPointF(rectPoints.ToArray()), intersection);
+                    //if (intersection.Length != 0)
+                    //{
+                    //    intersectionArea = CvInvoke.ContourArea(intersection);
+                    //}
+
+                    intersectionArea = GetIntersectionArea(rectangles, annotation, intersectionArea, rect);
+
+                    //var intersectionRect = Rectangle.Intersect(rect.Rectangle, annotationRect);
+                    //intersectionArea = intersectionRect.Width * intersectionRect.Height;
+
+                    var detectionArea = rectangles[rect].Rectangle.Width * rectangles[rect].Rectangle.Height;
+
+                    var union = annotationArea + detectionArea - intersectionArea;
+
+                    if ((intersectionArea / union) > Threshold)
+                    {
+                        intersectObject += 1;
+                    }
+                    else if ((intersectionArea / union) < Threshold)
+                    {
+                        myWrongCount += 1;
+                    }
+                }
+
+
+                if (annotations.Count == 0)
+                {
+                    myWrongCount += rectangles.Count;
+                }
+
+            }
+        }
+
+        private void CountingOfMiss(List<DetectionResult> rectangles, List<List<PointF>> annotations)
+        {
+            foreach (var annotation in annotations)         
+            {
+                double intersectionArea = 0;             
+                var intersectObject = 0;
+                double annotationArea = 0;
+
+                if (annotation.Count > 0)
+                {
+                    annotationArea = CvInvoke.ContourArea(new VectorOfPointF(annotation.ToArray()));
+                }
+
+                bool targetFound = false; 
+
+                for (int rect = 0; rect < rectangles.Count; rect++)
+                {
+                    intersectionArea = GetIntersectionArea(rectangles, annotation, intersectionArea, rect);
+
+                    var detectionArea = rectangles[rect].Rectangle.Width * rectangles[rect].Rectangle.Height;
+
+                    var union = annotationArea + detectionArea - intersectionArea;
+
+                    if ((intersectionArea / union) > Threshold)
+                    {
+                        intersectObject += 1;
+                    }
+
+                    if (annotation.Count > 0)
+                    {
+                        if (intersectObject != 0)
+                        {
+                            targetFound = true;
+                        }
+                    }
+                }
+
+                if (!targetFound)
+                {
+                    myMissingCount += 1;
+                }
+            }
+        }
+
+        private static double GetIntersectionArea(List<DetectionResult> rectangles, List<PointF> annotation, double intersectionArea, int rect)
+        {
+            foreach (var point in annotation)
+            {
+                if (point.X >= rectangles[rect].Rectangle.Left && point.X <= rectangles[rect].Rectangle.Right &&
+                    point.Y >= rectangles[rect].Rectangle.Top && point.Y <= rectangles[rect].Rectangle.Bottom)
+                {
+                    intersectionArea += 1;
+                }
+            }
+
+            return intersectionArea;
         }
 
         private List<PointF> GetRectPoints(DetectionResult rect)
@@ -208,44 +267,43 @@ namespace IoUAnalyzation
             return rectPoints;
         }
 
-        private List<List<PointF>> GetAnnotationPoints(List<string> filePaths)
+        private List<List<PointF>> GetAnnotationPoints(string filePath)
         {
 
             var annotations = new List<List<PointF>>();
-            foreach (var filePath in filePaths)
-            {
-                using (var sr = new StreamReader(filePath))
-                {
-                    var json = sr.ReadToEnd();
-                    dynamic expandoObject = JsonConvert.DeserializeObject<ExpandoObject>(json);
-                    
-                    var points = new List<PointF>();
-                    foreach(var classifyObject in expandoObject.Objects)
-                    {
-                        var classObject = (IDictionary<string, object>)classifyObject.Class;
-                        var className = classObject["$ref"].ToString().Trim('#');
-                        if (className == ClassName)
-                        {
-                            foreach (var layer in classifyObject.Layers)
-                            {
-                                if (((IDictionary<string, object>)layer.Shape).ContainsKey("Points"))
-                                {
-                                    foreach (var point in layer.Shape.Points)
-                                    {
-                                        //Console.WriteLine(float.Parse(point.Split(',')[0]));
-                                        points.Add(new PointF()
-                                        {
-                                            X = float.Parse(point.Split(',')[0]),
-                                            Y = float.Parse(point.Split(',')[1])
-                                        }); ;
-                                    }
-                                }
-                            };
-                        }
-                    }
 
-                    annotations.Add(points);
+            using (var sr = new StreamReader(filePath))
+            {
+                var json = sr.ReadToEnd();
+                dynamic expandoObject = JsonConvert.DeserializeObject<ExpandoObject>(json);
+                    
+                
+                foreach(var classifyObject in expandoObject.Objects)
+                {
+                    var classObject = (IDictionary<string, object>)classifyObject.Class;
+                    var className = classObject["$ref"].ToString().Trim('#');
+                    if (className == ClassName)
+                    {
+                        var points = new List<PointF>();
+                        foreach (var layer in classifyObject.Layers)
+                        {
+                            if (((IDictionary<string, object>)layer.Shape).ContainsKey("Points"))
+                            {                              
+                                foreach (var point in layer.Shape.Points)
+                                {
+                                    //Console.WriteLine(float.Parse(point.Split(',')[0]));
+                                    points.Add(new PointF()
+                                    {
+                                        X = float.Parse(point.Split(',')[0]),
+                                        Y = float.Parse(point.Split(',')[1])
+                                    }); ;
+                                }
+                            }
+                        };
+                        annotations.Add(points);
+                    }                   
                 }
+                
             }    
             return annotations;
         }
@@ -300,6 +358,7 @@ namespace IoUAnalyzation
 
         private void Calculate_OnClick(object sender, RoutedEventArgs e)
         {
+            Reset();
             IoUCalculation();
         }
 
@@ -310,6 +369,11 @@ namespace IoUAnalyzation
             {
                 ToolPath = browser.FileName;
             }            
+        }
+        private void Reset()
+        {
+            HideNg = false;
+            HideOk = false;
         }
     }
 }
