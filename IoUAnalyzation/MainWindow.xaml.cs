@@ -146,7 +146,7 @@ namespace IoUAnalyzation
                 double intersectionArea = 0;
                 var intersection = new VectorOfPointF();
                 var rectPoints = GetRectPoints(rectangles[rect]);
-                var intersectObject = 0;
+                bool intersectObject;
 
                 foreach (var annotation in annotations)
                 {
@@ -174,11 +174,13 @@ namespace IoUAnalyzation
 
                     var union = annotationArea + detectionArea - intersectionArea;
 
-                    if ((intersectionArea / union) > Threshold)
+                    if ((intersectionArea / union) >= Threshold)
                     {
-                        intersectObject += 1;
+                        intersectObject = true;
+                        break;
                     }
-                    else if ((intersectionArea / union) < Threshold)
+
+                    if (annotation == annotations.LastOrDefault())
                     {
                         myWrongCount += 1;
                     }
