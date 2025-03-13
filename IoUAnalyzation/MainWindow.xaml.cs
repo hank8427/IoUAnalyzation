@@ -274,39 +274,42 @@ namespace IoUAnalyzation
 
             var annotations = new List<List<PointF>>();
 
-            using (var sr = new StreamReader(filePath))
+            if (filePath != null)
             {
-                var json = sr.ReadToEnd();
-                dynamic expandoObject = JsonConvert.DeserializeObject<ExpandoObject>(json);
-                    
-                
-                foreach(var classifyObject in expandoObject.Objects)
+                using (var sr = new StreamReader(filePath))
                 {
-                    var classObject = (IDictionary<string, object>)classifyObject.Class;
-                    var className = classObject["$ref"].ToString().Trim('#');
-                    if (className == ClassName)
+                    var json = sr.ReadToEnd();
+                    dynamic expandoObject = JsonConvert.DeserializeObject<ExpandoObject>(json);
+
+
+                    foreach (var classifyObject in expandoObject.Objects)
                     {
-                        var points = new List<PointF>();
-                        foreach (var layer in classifyObject.Layers)
+                        var classObject = (IDictionary<string, object>)classifyObject.Class;
+                        var className = classObject["$ref"].ToString().Trim('#');
+                        if (className == ClassName)
                         {
-                            if (((IDictionary<string, object>)layer.Shape).ContainsKey("Points"))
-                            {                              
-                                foreach (var point in layer.Shape.Points)
+                            var points = new List<PointF>();
+                            foreach (var layer in classifyObject.Layers)
+                            {
+                                if (((IDictionary<string, object>)layer.Shape).ContainsKey("Points"))
                                 {
-                                    //Console.WriteLine(float.Parse(point.Split(',')[0]));
-                                    points.Add(new PointF()
+                                    foreach (var point in layer.Shape.Points)
                                     {
-                                        X = float.Parse(point.Split(',')[0]),
-                                        Y = float.Parse(point.Split(',')[1])
-                                    }); ;
+                                        //Console.WriteLine(float.Parse(point.Split(',')[0]));
+                                        points.Add(new PointF()
+                                        {
+                                            X = float.Parse(point.Split(',')[0]),
+                                            Y = float.Parse(point.Split(',')[1])
+                                        }); ;
+                                    }
                                 }
-                            }
-                        };
-                        annotations.Add(points);
-                    }                   
+                            };
+                            annotations.Add(points);
+                        }
+                    }
+
                 }
-                
-            }    
+            }
             return annotations;
         }
 
