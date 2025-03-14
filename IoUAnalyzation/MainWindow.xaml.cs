@@ -30,6 +30,7 @@ using System.Windows.Markup;
 using System.Collections.ObjectModel;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Windows.Annotations;
+using System.Runtime.InteropServices;
 
 namespace IoUAnalyzation
 {
@@ -107,6 +108,9 @@ namespace IoUAnalyzation
                 var annotateFilePath = ToolPath + "\\Images\\";
                 var annotationFiles = Directory.GetFiles(annotateFilePath, "*.json").ToList();
 
+                detections.Sort((a,b)=> CompareFileName(a,b));
+                annotationFiles.Sort((a,b)=> CompareFileName(a, b));
+
                 for (int i = 0; i < detections.Count; i++)
                 {
                     myWrongCount = 0;
@@ -127,7 +131,7 @@ namespace IoUAnalyzation
                     }
                     else
                     {
-                        System.IO.Path.GetFileNameWithoutExtension(annotationFile);
+                        name = System.IO.Path.GetFileNameWithoutExtension(annotationFile);
                     }
 
                     Results.Add(new DisplayResult()
@@ -148,6 +152,32 @@ namespace IoUAnalyzation
                 System.Windows.Forms.MessageBox.Show(ex.ToString());
             }
           
+        }
+
+        private int CompareFileName(string file1, string file2)
+        {
+            var (prefix1, number1) = ExtractPrefixAndNumber(file1);
+            var (prefix2, number2) = ExtractPrefixAndNumber(file2);
+
+            if (prefix1 == prefix2)
+            {
+                return number1.CompareTo(number2);
+            }
+
+            return string.Compare(prefix1, prefix2);
+        }
+
+        private (string prefix,int number) ExtractPrefixAndNumber(string file)
+        {
+            var matchs = System.Text.RegularExpressions.Regex.Matches(file , @"\d+");
+            if(matchs.Count > 0)
+            {
+                var lastMatch = matchs[matchs.Count - 1];
+                var lastNumber = int.Parse(lastMatch.Value);
+                var prefix = file.Substring(0, lastMatch.Index);
+                return (prefix, lastNumber);
+            }
+            return (file,0);
         }
 
         private void CountingOfWrong(List<DetectionResult> rectangles, List<List<PointF>> annotations)
