@@ -120,9 +120,19 @@ namespace IoUAnalyzation
                     CountingOfWrong(rectangles, annotations);
                     CountingOfMiss(rectangles, annotations);
 
+                    string name = "";
+                    if (annotationFile == null)
+                    {
+                        name = System.IO.Path.GetFileNameWithoutExtension(detections[i]);
+                    }
+                    else
+                    {
+                        System.IO.Path.GetFileNameWithoutExtension(annotationFile);
+                    }
+
                     Results.Add(new DisplayResult()
                     {
-                        ImageName = System.IO.Path.GetFileNameWithoutExtension(annotationFile),
+                        ImageName = name,
                         WrongCount = myWrongCount,
                         MissingCount = myMissingCount,
                         DetectCount = rectangles.Count,
