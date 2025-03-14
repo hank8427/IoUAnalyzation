@@ -12,6 +12,7 @@ namespace IoUAnalyzation
         public string ImageName { get; set; }
         public int WrongCount { get; set; }
         public int MissingCount { get; set; }
-        public int TotalCount { get; set; }
+        public int DetectCount { get; set; }
+        public int AnnotationCount { get; set; }
     }
 }

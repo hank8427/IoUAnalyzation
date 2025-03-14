@@ -125,7 +125,8 @@ namespace IoUAnalyzation
                         ImageName = System.IO.Path.GetFileNameWithoutExtension(annotationFile),
                         WrongCount = myWrongCount,
                         MissingCount = myMissingCount,
-                        TotalCount = rectangles.Count
+                        DetectCount = rectangles.Count,
+                        AnnotationCount = annotations.Count
                     });
                 };
 
