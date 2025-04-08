@@ -32,6 +32,7 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Windows.Annotations;
 using System.Runtime.InteropServices;
 
+
 namespace IoUAnalyzation
 {
     /// <summary>
@@ -44,12 +45,25 @@ namespace IoUAnalyzation
         public string ToolPath{ get; set; }
         public string ClassName { get; set; } = "NG";
         public double Threshold { get; set; } = 0.005;
-        public double ScoreThreshold { get; set; } = 0.5;
+        public double ScoreThreshold { get; set; } = 0.1;
         public int WrongCount { get; set; }
         public int MissingCount { get; set; }
         public int TotalCount { get; set; }
         public bool HideNg{ get; set; }
         public bool HideOk{ get; set; }
+        public bool HideWrong{ get; set; }
+
+        private int _selectedCount;
+        public int SelectedCount
+        {
+            get { return _selectedCount; }
+            set
+            {
+                _selectedCount = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedCount)));
+            }
+        }
+
         private void OnHideNgChanged()
         {
             if (HideNg)
@@ -82,6 +96,31 @@ namespace IoUAnalyzation
                 IoUCalculation();
             }
         }
+
+        private void OnHideWrongChanged()
+        {
+            if (HideWrong)
+            {
+                if (Results != null && Results.Count > 0)
+                {
+                    IoUCalculation();
+                    var result = Results.Where(x => x.MissingCount > 0);
+                    Results = new ObservableCollection<DisplayResult>(result);
+                }
+            }
+            else
+            {
+                IoUCalculation();
+            }
+        }
+        private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.ListView listView)
+            {
+                SelectedCount = listView.SelectedItems.Count;
+            }
+        }
+
         public ObservableCollection<DisplayResult> Results {  get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -106,7 +145,7 @@ namespace IoUAnalyzation
                 var detectionFilePath = ToolPath + "\\Images\\Validation\\ValidationGroup\\Detection\\";
                 var detections = Directory.GetFiles(detectionFilePath, "*.json").ToList();
                 var annotateFilePath = ToolPath + "\\Images\\";
-                var annotationFiles = Directory.GetFiles(annotateFilePath, "*.json").ToList();
+                var annotationFiles = Directory.GetFiles(annotateFilePath, "*.json").Where(x=>x.Contains("FastLabel")).ToList();
 
                 detections.Sort((a,b)=> CompareFileName(a,b));
                 annotationFiles.Sort((a,b)=> CompareFileName(a, b));
@@ -227,7 +266,6 @@ namespace IoUAnalyzation
                     }
                 }
 
-
                 if (annotations.Count == 0)
                 {
                     myWrongCount += rectangles.Count;
@@ -263,7 +301,6 @@ namespace IoUAnalyzation
                     {
                         intersectObject += 1;
                     }
-
                     if (annotation.Count > 0)
                     {
                         if (intersectObject != 0)
@@ -272,7 +309,6 @@ namespace IoUAnalyzation
                         }
                     }
                 }
-
                 if (!targetFound)
                 {
                     myMissingCount += 1;
@@ -290,7 +326,6 @@ namespace IoUAnalyzation
                     intersectionArea += 1;
                 }
             }
-
             return intersectionArea;
         }
 
@@ -312,7 +347,6 @@ namespace IoUAnalyzation
 
         private List<List<PointF>> GetAnnotationPoints(string filePath)
         {
-
             var annotations = new List<List<PointF>>();
 
             if (filePath != null)
@@ -321,7 +355,6 @@ namespace IoUAnalyzation
                 {
                     var json = sr.ReadToEnd();
                     dynamic expandoObject = JsonConvert.DeserializeObject<ExpandoObject>(json);
-
 
                     foreach (var classifyObject in expandoObject.Objects)
                     {
@@ -353,7 +386,6 @@ namespace IoUAnalyzation
             }
             return annotations;
         }
-
 
         private List<DetectionResult> GetDetectionRect(string filePath)
         {
@@ -408,6 +440,13 @@ namespace IoUAnalyzation
             IoUCalculation();
         }
 
+        private void CalculateWithOutWrong_OnClick(object sender, RoutedEventArgs e)
+        {
+            Reset();
+            IoUCalculation();
+            HideWrong = true;
+        }
+
         private void SelectTool_OnClick(object sender, RoutedEventArgs e)
         {
             var browser =  new CommonOpenFileDialog() { IsFolderPicker = true};
@@ -416,10 +455,12 @@ namespace IoUAnalyzation
                 ToolPath = browser.FileName;
             }            
         }
+
         private void Reset()
         {
             HideNg = false;
-            HideOk = false;
+            HideOk = false; 
+            HideWrong = false;
         }
 
         private bool ClassNameComparison(string className, string targetString)

@@ -34,10 +34,11 @@
                 <TextBlock Text="IoU Threshold: "/>
                 <TextBox Text ="{Binding Threshold}" Width ="120" TextAlignment="Center" Margin="5"/>
                 <Button Content="Calculate IoU" Height="20" Width="120" Click="Calculate_OnClick" Margin="5"/>
+                <Button Content="IOU WithOutWrong" Height="40" Width="120" Click="CalculateWithOutWrong_OnClick" Margin="5"/>
             </StackPanel>
         </DockPanel>
-        
-        <ListView Grid.Column="1"  ItemsSource ="{Binding Results}" Margin="5">
+
+        <ListView Grid.Column="1"  ItemsSource ="{Binding Results}" Margin="5" SelectionMode="Extended" SelectionChanged="ListView_SelectionChanged">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Width="150" Header="Name" DisplayMemberBinding="{Binding ImageName}"/>
@@ -48,7 +49,7 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <UniformGrid Columns="4" Grid.Column="1" Grid.Row="1">
+        <UniformGrid Columns="5" Grid.Column="1" Grid.Row="1">
             <WrapPanel>
                 <TextBlock Text="誤抓張數:" Margin="0,0,5,0"/>
                 <TextBlock Text="{Binding WrongCount}"/>
@@ -64,6 +65,14 @@
             <WrapPanel>
                 <TextBlock Text="隱藏OK" Margin="0,0,5,0"/>
                 <CheckBox IsChecked="{Binding HideOk}"/>
+            </WrapPanel>
+            <WrapPanel>
+                <TextBlock Text="隱藏Wrong" Margin="0,0,5,0"/>
+                <CheckBox IsChecked="{Binding HideWrong}"/>
+            </WrapPanel>
+            <WrapPanel>
+                <TextBlock Text="選取數量:" Margin="0,0,5,0"/>
+                <TextBlock Text="{Binding SelectedCount}"/>
             </WrapPanel>
         </UniformGrid>
 
