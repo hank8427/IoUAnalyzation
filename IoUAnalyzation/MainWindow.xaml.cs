@@ -297,7 +297,7 @@ namespace IoUAnalyzation
                     {
                         var classObject = (IDictionary<string, object>)classifyObject.Class;
                         var className = classObject["$ref"].ToString().Trim('#');
-                        if (className == ClassName)
+                        if (ClassNameComparison(className, ClassName))
                         {
                             var points = new List<PointF>();
                             foreach (var layer in classifyObject.Layers)
@@ -340,7 +340,7 @@ namespace IoUAnalyzation
                     var score = Math.Round(rectangle.annotations[i].score, 2);
                     var classId = (int)rectangle.annotations[i].category_id;
                     var className = rectangle.categories[classId-1].name.ToString();
-                    if (score > ScoreThreshold && className == ClassName)
+                    if (score > ScoreThreshold && ClassNameComparison(className, ClassName))
                     {
                         rectangleResults.Add(new DetectionResult()
                         {
@@ -390,6 +390,11 @@ namespace IoUAnalyzation
         {
             HideNg = false;
             HideOk = false;
+        }
+
+        private bool ClassNameComparison(string className, string targetString)
+        {
+            return className.Contains(targetString);
         }
     }
 }
