@@ -42,10 +42,11 @@
             <ListView.View>
                 <GridView>
                     <GridViewColumn Width="150" Header="Name" DisplayMemberBinding="{Binding ImageName}"/>
-                    <GridViewColumn Width="100" Header="WrongCount" DisplayMemberBinding="{Binding WrongCount}" />
                     <GridViewColumn Width="100" Header="MissingCount" DisplayMemberBinding="{Binding MissingCount}"/>
+                    <GridViewColumn Width="100" Header="WrongCount" DisplayMemberBinding="{Binding WrongCount}" />
+                    <GridViewColumn Width="100" Header="WrongOKCount" DisplayMemberBinding="{Binding WrongOKCount}" />
                     <GridViewColumn Width="100" Header="DetectCount" DisplayMemberBinding="{Binding DetectCount}"/>
-                    <GridViewColumn Width="100" Header="AnnotationCount" DisplayMemberBinding="{Binding AnnotationCount}"/>
+                    <GridViewColumn Width="120" Header="AnnotationCount" DisplayMemberBinding="{Binding AnnotationCount}"/>
                 </GridView>
             </ListView.View>
         </ListView>
@@ -73,6 +74,10 @@
             <WrapPanel>
                 <TextBlock Text="選取數量:" Margin="0,0,5,0"/>
                 <TextBlock Text="{Binding SelectedCount}"/>
+            </WrapPanel>
+            <WrapPanel>
+                <TextBlock Text="OK誤抓張數:" Margin="0,0,5,0"/>
+                <TextBlock Text="{Binding WrongCount}"/>
             </WrapPanel>
         </UniformGrid>
 

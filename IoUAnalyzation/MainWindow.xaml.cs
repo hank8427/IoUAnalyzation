@@ -42,8 +42,8 @@ namespace IoUAnalyzation
     {
         private int myMissingCount { get; set; }
         private int myWrongCount { get; set; }
+        private int myWrongOKCount { get; set; }
         public string ToolPath{ get; set; }
-        public string ClassName { get; set; } = "NG";
         public double Threshold { get; set; } = 0.005;
         public double ScoreThreshold { get; set; } = 0.1;
         public int WrongCount { get; set; }
@@ -71,7 +71,7 @@ namespace IoUAnalyzation
                 if(Results != null && Results.Count > 0)
                 {
                     IoUCalculation();
-                    var result = Results.Where(x => x.WrongCount == 0 && x.MissingCount == 0);
+                    var result = Results.Where(x => x.WrongCount == 0 && x.MissingCount == 0 && x.WrongOKCount == 0);
                     Results = new ObservableCollection<DisplayResult>(result);
                 }
             }
@@ -87,7 +87,7 @@ namespace IoUAnalyzation
                 if (Results != null && Results.Count > 0)
                 {
                     IoUCalculation(); 
-                    var result = Results.Where(x => x.WrongCount > 0 || x.MissingCount > 0);
+                    var result = Results.Where(x => x.WrongCount > 0 || x.MissingCount > 0 || x.WrongOKCount > 0);
                     Results = new ObservableCollection<DisplayResult>(result);
                 }
             }
@@ -153,15 +153,18 @@ namespace IoUAnalyzation
                 for (int i = 0; i < detections.Count; i++)
                 {
                     myWrongCount = 0;
+                    myWrongOKCount = 0;
                     myMissingCount = 0;
-                    var rectangles = GetDetectionRect(detections[i]);
+                    var ngRectangles = GetDetectionRect(detections[i], "NG");
+                    var okRectangles = GetDetectionRect(detections[i], "OK");
 
                     var annotationFile = annotationFiles.Where(x => x.Contains(detections[i].Split('\\').LastOrDefault().Split('.')[0])).FirstOrDefault();
 
-                    var annotations = GetAnnotationPoints(annotationFile);
+                    var annotations = GetAnnotationPoints(annotationFile, "NG");
 
-                    CountingOfWrong(rectangles, annotations);
-                    CountingOfMiss(rectangles, annotations);
+                    CountingOfWrongOK(okRectangles, annotations);
+                    CountingOfWrong(ngRectangles, annotations);
+                    CountingOfMiss(ngRectangles, annotations);
 
                     string name = "";
                     if (annotationFile == null)
@@ -176,9 +179,10 @@ namespace IoUAnalyzation
                     Results.Add(new DisplayResult()
                     {
                         ImageName = name,
-                        WrongCount = myWrongCount,
                         MissingCount = myMissingCount,
-                        DetectCount = rectangles.Count,
+                        WrongCount = myWrongCount,
+                        WrongOKCount = myWrongOKCount,
+                        DetectCount = ngRectangles.Count + okRectangles.Count,
                         AnnotationCount = annotations.Count
                     });
                 };
@@ -217,6 +221,36 @@ namespace IoUAnalyzation
                 return (prefix, lastNumber);
             }
             return (file,0);
+        }
+
+        private void CountingOfWrongOK(List<DetectionResult> rectangles, List<List<PointF>> annotations)
+        {
+            for (int rect = 0; rect < rectangles.Count; rect++)
+            {
+                double intersectionArea = 0;
+                bool intersectObject;
+
+                foreach (var annotation in annotations)
+                {
+                    double annotationArea = 0;
+                    if (annotation.Count > 0)
+                    {
+                        annotationArea = CvInvoke.ContourArea(new VectorOfPointF(annotation.ToArray()));
+                    }
+
+                    intersectionArea = GetIntersectionArea(rectangles, annotation, intersectionArea, rect);
+
+                    var detectionArea = rectangles[rect].Rectangle.Width * rectangles[rect].Rectangle.Height;
+
+                    var union = annotationArea + detectionArea - intersectionArea;
+
+                    if ((intersectionArea / union) >= Threshold)
+                    {
+                        myWrongOKCount += 1;
+                        break;
+                    }
+                }
+            }
         }
 
         private void CountingOfWrong(List<DetectionResult> rectangles, List<List<PointF>> annotations)
@@ -345,7 +379,7 @@ namespace IoUAnalyzation
             return rectPoints;
         }
 
-        private List<List<PointF>> GetAnnotationPoints(string filePath)
+        private List<List<PointF>> GetAnnotationPoints(string filePath, string targetString)
         {
             var annotations = new List<List<PointF>>();
 
@@ -360,7 +394,7 @@ namespace IoUAnalyzation
                     {
                         var classObject = (IDictionary<string, object>)classifyObject.Class;
                         var className = classObject["$ref"].ToString().Trim('#');
-                        if (ClassNameComparison(className, ClassName))
+                        if (ClassNameComparison(className, targetString))
                         {
                             var points = new List<PointF>();
                             foreach (var layer in classifyObject.Layers)
@@ -387,7 +421,7 @@ namespace IoUAnalyzation
             return annotations;
         }
 
-        private List<DetectionResult> GetDetectionRect(string filePath)
+        private List<DetectionResult> GetDetectionRect(string filePath, string targetString)
         {
            
             using (var sr = new StreamReader(filePath))
@@ -402,7 +436,7 @@ namespace IoUAnalyzation
                     var score = Math.Round(rectangle.annotations[i].score, 2);
                     var classId = (int)rectangle.annotations[i].category_id;
                     var className = rectangle.categories[classId-1].name.ToString();
-                    if (score > ScoreThreshold && ClassNameComparison(className, ClassName))
+                    if (score > ScoreThreshold && ClassNameComparison(className, targetString))
                     {
                         rectangleResults.Add(new DetectionResult()
                         {
