@@ -57,6 +57,7 @@ namespace IoUAnalyzation
         public bool HideOk{ get; set; }
         public bool HideWrong{ get; set; }
         public bool OnlyWrongOK{ get; set; }
+        public bool OnlyOverlap{ get; set; }
 
         private int _selectedCount;
         public int SelectedCount
@@ -127,6 +128,23 @@ namespace IoUAnalyzation
                 {
                     IoUCalculation();
                     var result = Results.Where(x => x.WrongOKCount > 0);
+                    Results = new ObservableCollection<DisplayResult>(result);
+                }
+            }
+            else
+            {
+                IoUCalculation();
+            }
+        }
+
+        private void OnOnlyOverlapChanged()
+        {
+            if (OnlyOverlap)
+            {
+                if (Results != null && Results.Count > 0)
+                {
+                    IoUCalculation();
+                    var result = Results.Where(x => x.OverlapCount > 0);
                     Results = new ObservableCollection<DisplayResult>(result);
                 }
             }
