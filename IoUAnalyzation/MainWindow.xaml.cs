@@ -52,6 +52,7 @@ namespace IoUAnalyzation
         public bool HideNg{ get; set; }
         public bool HideOk{ get; set; }
         public bool HideWrong{ get; set; }
+        public bool OnlyWrongOK{ get; set; }
 
         private int _selectedCount;
         public int SelectedCount
@@ -113,6 +114,26 @@ namespace IoUAnalyzation
                 IoUCalculation();
             }
         }
+
+        private void OnOnlyWrongOKChanged()
+        {
+            if (OnlyWrongOK)
+            {
+                if (Results != null && Results.Count > 0)
+                {
+                    IoUCalculation();
+                    var result = Results.Where(x => x.WrongOKCount > 0);
+                    Results = new ObservableCollection<DisplayResult>(result);
+                }
+            }
+            else
+            {
+                IoUCalculation();
+            }
+        }
+
+
+
         private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (sender is System.Windows.Controls.ListView listView)
