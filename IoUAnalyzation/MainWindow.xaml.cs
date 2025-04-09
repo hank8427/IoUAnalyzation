@@ -31,6 +31,7 @@ using System.Collections.ObjectModel;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Windows.Annotations;
 using System.Runtime.InteropServices;
+using MS.WindowsAPICodePack.Internal;
 
 
 namespace IoUAnalyzation
@@ -43,8 +44,11 @@ namespace IoUAnalyzation
         private int myMissingCount { get; set; }
         private int myWrongCount { get; set; }
         private int myWrongOKCount { get; set; }
+        private int myOkNgOverlapCount { get; set; }
+
         public string ToolPath{ get; set; }
         public double Threshold { get; set; } = 0.005;
+        public double OverlapThreshold { get; set; } = 0.5;
         public double ScoreThreshold { get; set; } = 0.1;
         public int WrongCount { get; set; }
         public int MissingCount { get; set; }
@@ -186,6 +190,7 @@ namespace IoUAnalyzation
                     CountingOfWrongOK(okRectangles, annotations);
                     CountingOfWrong(ngRectangles, annotations);
                     CountingOfMiss(ngRectangles, annotations);
+                    CountingOfOverlap(ngRectangles, okRectangles);
 
                     string name = "";
                     if (annotationFile == null)
@@ -242,6 +247,27 @@ namespace IoUAnalyzation
                 return (prefix, lastNumber);
             }
             return (file,0);
+        }
+
+        private void CountingOfOverlap(List<DetectionResult> ngRectangles, List<DetectionResult> okRectangles)
+        {
+            for (int rect = 0; rect < ngRectangles.Count; rect++)
+            {
+                double iou = 0;
+                bool intersectObject;
+
+                foreach (var okRectangle in okRectangles)
+                {
+                    double annotationArea = 0;
+                    iou = GetRectanglesIoU(ngRectangles[rect], okRectangle);
+
+                    if (iou >= OverlapThreshold)
+                    {
+                        myOkNgOverlapCount += 1;
+                        break;
+                    }
+                }
+            }
         }
 
         private void CountingOfWrongOK(List<DetectionResult> rectangles, List<List<PointF>> annotations)
@@ -369,6 +395,28 @@ namespace IoUAnalyzation
                     myMissingCount += 1;
                 }
             }
+        }
+
+        private double GetRectanglesIoU(DetectionResult okResult, DetectionResult ngResult)
+        {
+            var okRect = okResult.Rectangle;
+            var ngRect = ngResult.Rectangle;
+
+            int xLeft = Math.Max(okRect.Left, ngRect.Left);
+            int yTop = Math.Max(okRect.Top, ngRect.Top);
+            int xRight = Math.Min(okRect.Right, ngRect.Right);
+            int yBottom = Math.Min(okRect.Bottom, ngRect.Bottom);
+
+            // 沒有重疊的情況
+            if (xRight <= xLeft || yBottom <= yTop)
+                return 0.0;
+
+            int intersectionArea = (xRight - xLeft) * (yBottom - yTop);
+            int areaA = (okRect.Right - okRect.Left) * (okRect.Bottom - okRect.Top);
+            int areaB = (ngRect.Right - ngRect.Left) * (ngRect.Bottom - ngRect.Top);
+            int unionArea = areaA + areaB - intersectionArea;
+
+            return (double)intersectionArea / unionArea;
         }
 
         private static double GetIntersectionArea(List<DetectionResult> rectangles, List<PointF> annotation, double intersectionArea, int rect)

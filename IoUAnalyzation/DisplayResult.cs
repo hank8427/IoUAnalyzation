@@ -15,5 +15,7 @@ namespace IoUAnalyzation
         public int MissingCount { get; set; }
         public int DetectCount { get; set; }
         public int AnnotationCount { get; set; }
+        public int OverlapCount { get; set; }
+
     }
 }
