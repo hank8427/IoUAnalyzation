@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:IoUAnalyzation"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="1200"
+        Title="MainWindow" Height="800" Width="1200"
         DataContext ="{Binding RelativeSource={RelativeSource Self}}">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -34,7 +34,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 
-                <TextBlock Text="IoU Threshold: "/>
+                <TextBlock Text="IoU Threshold: " Margin="0,20,0,0"/>
                 <TextBox Text ="{Binding Threshold}" Width ="120" TextAlignment="Center" Margin="5"/>
                 <TextBlock Text="OK/NG IoU Threshold: "/>
                 <TextBox Text ="{Binding OverlapThreshold}" Width ="120" TextAlignment="Center" Margin="5"/>

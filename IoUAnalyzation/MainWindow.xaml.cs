@@ -32,6 +32,7 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Windows.Annotations;
 using System.Runtime.InteropServices;
 using MS.WindowsAPICodePack.Internal;
+using MessageBox = System.Windows.Forms.MessageBox;
 
 
 namespace IoUAnalyzation
@@ -198,6 +199,7 @@ namespace IoUAnalyzation
                     myWrongCount = 0;
                     myWrongOKCount = 0;
                     myMissingCount = 0;
+                    myOkNgOverlapCount = 0;
                     var ngRectangles = GetDetectionRect(detections[i], "NG");
                     var okRectangles = GetDetectionRect(detections[i], "OK");
 
@@ -227,7 +229,8 @@ namespace IoUAnalyzation
                         WrongCount = myWrongCount,
                         WrongOKCount = myWrongOKCount,
                         DetectCount = ngRectangles.Count + okRectangles.Count,
-                        AnnotationCount = annotations.Count
+                        AnnotationCount = annotations.Count,
+                        OverlapCount = myOkNgOverlapCount
                     });
                 };
 
@@ -523,7 +526,7 @@ namespace IoUAnalyzation
                     var score = Math.Round(rectangle.annotations[i].score, 2);
                     var classId = (int)rectangle.annotations[i].category_id;
                     var className = rectangle.categories[classId-1].name.ToString();
-                    if (score > DetectParameterSetting[className].ScoreThreshold && ClassNameComparison(className, targetString))
+                    if (score > DetectParameterSetting.FirstOrDefault(x=>x.ClassName == className).ScoreThreshold && ClassNameComparison(className, targetString))
                     {
                         rectangleResults.Add(new DetectionResult()
                         {
@@ -592,24 +595,31 @@ namespace IoUAnalyzation
 
         private void LoadDetectParameter()
         {
-            var classNameFilePath = $"{ToolPath}\\Images\\Annotation\\class_name.txt";
-
-            var items = new List<string>();
-
-            foreach (var line in File.ReadAllLines(classNameFilePath))
+            try
             {
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    continue;
-                }
+                var classNameFilePath = $"{ToolPath}\\Images\\Annotation\\class_name.txt";
 
-                string key = line.Split(' ')[0];
-                DetectParameterSetting.Add(new DetectParameterSetting()
+                var items = new List<string>();
+
+                foreach (var line in File.ReadAllLines(classNameFilePath))
                 {
-                    ClassName = key,
-                    ScoreThreshold = 0.1
-                });
-            }             
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        continue;
+                    }
+
+                    string key = line.Split(' ')[0];
+                    DetectParameterSetting.Add(new DetectParameterSetting()
+                    {
+                        ClassName = key,
+                        ScoreThreshold = 0.1
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
         }
     }
 }
