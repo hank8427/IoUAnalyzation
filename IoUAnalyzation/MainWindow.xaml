@@ -27,10 +27,13 @@
             </StackPanel>
 
             <StackPanel DockPanel.Dock="Bottom" Margin="5,100,5,0">
-                <TextBlock Text="Class Name: "/>
-                <TextBox Text ="{Binding ClassName}" Width ="120" TextAlignment="Center" Margin="5"/>
-                <TextBlock Text="Score Threshold: "/>
-                <TextBox Text ="{Binding ScoreThreshold}" Width ="120" TextAlignment="Center" Margin="5"/>
+                <DataGrid ItemsSource="{Binding DetectParameterSetting}" AutoGenerateColumns="False" CanUserAddRows="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Class" Binding="{Binding ClassName}" Width="*"/>
+                        <DataGridTextColumn Header="Score" Binding="{Binding ScoreThreshold}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                
                 <TextBlock Text="IoU Threshold: "/>
                 <TextBox Text ="{Binding Threshold}" Width ="120" TextAlignment="Center" Margin="5"/>
                 <TextBlock Text="OK/NG IoU Threshold: "/>

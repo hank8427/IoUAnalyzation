@@ -49,7 +49,6 @@ namespace IoUAnalyzation
         public string ToolPath{ get; set; }
         public double Threshold { get; set; } = 0.005;
         public double OverlapThreshold { get; set; } = 0.5;
-        public double ScoreThreshold { get; set; } = 0.1;
         public int WrongCount { get; set; }
         public int MissingCount { get; set; }
         public int TotalCount { get; set; }
@@ -58,6 +57,7 @@ namespace IoUAnalyzation
         public bool HideWrong{ get; set; }
         public bool OnlyWrongOK{ get; set; }
         public bool OnlyOverlap{ get; set; }
+        public ObservableCollection<DetectParameterSetting> DetectParameterSetting { get; set; } = new ObservableCollection<DetectParameterSetting>();
 
         private int _selectedCount;
         public int SelectedCount
@@ -169,7 +169,7 @@ namespace IoUAnalyzation
         public event PropertyChangedEventHandler PropertyChanged;
         public MainWindow()
         {
-            InitializeComponent();            
+            InitializeComponent();
         }       
 
         public void IoUCalculation()
@@ -523,7 +523,7 @@ namespace IoUAnalyzation
                     var score = Math.Round(rectangle.annotations[i].score, 2);
                     var classId = (int)rectangle.annotations[i].category_id;
                     var className = rectangle.categories[classId-1].name.ToString();
-                    if (score > ScoreThreshold && ClassNameComparison(className, targetString))
+                    if (score > DetectParameterSetting[className].ScoreThreshold && ClassNameComparison(className, targetString))
                     {
                         rectangleResults.Add(new DetectionResult()
                         {
@@ -574,6 +574,7 @@ namespace IoUAnalyzation
             if (browser.ShowDialog() == CommonFileDialogResult.Ok)
             {
                 ToolPath = browser.FileName;
+                LoadDetectParameter();
             }            
         }
 
@@ -587,6 +588,28 @@ namespace IoUAnalyzation
         private bool ClassNameComparison(string className, string targetString)
         {
             return className.Contains(targetString);
+        }
+
+        private void LoadDetectParameter()
+        {
+            var classNameFilePath = $"{ToolPath}\\Images\\Annotation\\class_name.txt";
+
+            var items = new List<string>();
+
+            foreach (var line in File.ReadAllLines(classNameFilePath))
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
+                string key = line.Split(' ')[0];
+                DetectParameterSetting.Add(new DetectParameterSetting()
+                {
+                    ClassName = key,
+                    ScoreThreshold = 0.1
+                });
+            }             
         }
     }
 }
